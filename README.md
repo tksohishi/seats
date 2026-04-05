@@ -20,6 +20,8 @@ bun test
 
 ## Setup
 
+Requires a [seats.aero Partner API](https://seats.aero/partner) subscription.
+
 ```bash
 seats setup
 ```

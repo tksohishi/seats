@@ -2,7 +2,29 @@
   "name": "seats",
   "version": "0.1.0",
   "description": "CLI for seats.aero partner API",
+  "author": "Takeshi Ohishi",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tksohishi/seats.git"
+  },
+  "homepage": "https://github.com/tksohishi/seats",
+  "bugs": {
+    "url": "https://github.com/tksohishi/seats/issues"
+  },
+  "keywords": [
+    "seats-aero",
+    "award-flights",
+    "miles",
+    "points",
+    "cli",
+    "flight-search",
+    "award-availability"
+  ],
   "type": "module",
+  "engines": {
+    "bun": ">=1.0.0"
+  },
   "bin": {
     "seats": "src/cli.ts"
   },
