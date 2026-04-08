@@ -24,7 +24,7 @@ jobs:
           - os: macos-14
             target: bun-darwin-arm64
             artifact: seats-darwin-arm64
-          - os: macos-13
+          - os: macos-14
             target: bun-darwin-x64
             artifact: seats-darwin-x64
           - os: ubuntu-latest
