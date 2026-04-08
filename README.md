@@ -1,6 +1,8 @@
 # seats
 
-CLI for searching seats.aero award availability from the terminal.
+> **Unofficial** CLI for searching [seats.aero](https://seats.aero) award availability from the terminal. Not affiliated with or endorsed by seats.aero. This project is in **beta** and may have breaking changes.
+
+Requires a [seats.aero Partner API](https://seats.aero/partner) subscription.
 
 ## Install (Homebrew)
 
@@ -19,8 +21,6 @@ bun test
 ```
 
 ## Setup
-
-Requires a [seats.aero Partner API](https://seats.aero/partner) subscription.
 
 ```bash
 seats setup
