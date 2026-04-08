@@ -2,7 +2,7 @@
 
 > **Unofficial** CLI for searching [seats.aero](https://seats.aero) award availability from the terminal. Not affiliated with or endorsed by seats.aero. This project is in **beta** and may have breaking changes.
 
-Requires a [seats.aero](https://seats.aero) Pro subscription with Partner API access.
+Requires a [seats.aero](https://seats.aero) Partner API key. See [API docs](https://seats.aero/skill.md) for access tiers.
 
 ## Install (Homebrew)
 
