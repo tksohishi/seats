@@ -22,7 +22,7 @@ jobs:
 
       - name: Update formula in tap repo
         env:
-          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          TAP_TOKEN: ${{ secrets.TAP_GH_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           SHA_ARM64=$(grep darwin-arm64 checksums.txt | awk '{print $1}')
