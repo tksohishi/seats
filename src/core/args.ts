@@ -19,7 +19,7 @@ const FLAG_VALUE_KEYS = new Set([
   "--airline",
   "--min-seats"
 ]);
-const BOOLEAN_FLAGS = new Set(["--direct", "--include-filtered", "--json", "--debug"]);
+const BOOLEAN_FLAGS = new Set(["--direct", "--include-filtered", "--trips", "--json", "--debug"]);
 const VALID_CABINS = new Set<Cabin>(["economy", "premium", "business", "first"]);
 const KNOWN_PROGRAMS = new Set(
   Object.values(ALLIANCE_SOURCES).flatMap((list) => list)
@@ -245,6 +245,7 @@ export function parseFlightsArgs(argv: string[]): FlightsArgs {
     minSeats,
     direct: map.get("--direct") === true,
     includeFiltered: map.get("--include-filtered") === true,
+    trips: map.get("--trips") === true,
     debug: map.get("--debug") === true,
     json: map.get("--json") === true,
     argWarnings

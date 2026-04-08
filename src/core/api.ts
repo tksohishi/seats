@@ -1,5 +1,5 @@
 import { CliError } from "./errors";
-import type { AvailabilityRecord, SearchResponse, SearchStats } from "./types";
+import type { AvailabilityRecord, Cabin, SearchResponse, SearchStats, Trip } from "./types";
 
 const BASE_URL = "https://seats.aero/partnerapi/search";
 
@@ -131,4 +131,82 @@ export async function searchFlights(
     },
     warnings
   };
+}
+
+type RawTrip = {
+  Cabin?: string;
+  MileageCost?: number;
+  FlightNumbers?: string;
+  Connections?: string[];
+  Stops?: number;
+  DepartsAt?: string;
+  ArrivesAt?: string;
+  TotalDuration?: number;
+  Aircraft?: string[];
+  RemainingSeats?: number;
+  Filtered?: boolean;
+};
+
+const CABIN_NORMALIZE: Record<string, Cabin> = {
+  economy: "economy",
+  premium: "premium",
+  business: "business",
+  first: "first"
+};
+
+export async function fetchTrips(
+  apiKey: string,
+  availabilityId: string,
+  options?: { cabin?: Cabin; fetchImpl?: typeof fetch }
+): Promise<Trip[]> {
+  const fetchImpl = options?.fetchImpl ?? fetch;
+  const url = `https://seats.aero/partnerapi/trips/${availabilityId}?include_filtered=true`;
+
+  let response: Response;
+  try {
+    response = await fetchImpl(url, {
+      headers: { "Partner-Authorization": apiKey }
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new CliError(`Network error fetching trips: ${message}`, 3);
+  }
+
+  const bodyText = await response.text();
+  if (!response.ok) {
+    throw parseApiError(bodyText, response.status);
+  }
+
+  let parsed: { data?: RawTrip[] };
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    throw new CliError("Trips API returned invalid JSON.", 3);
+  }
+
+  const raw = Array.isArray(parsed.data) ? parsed.data : [];
+  const trips: Trip[] = [];
+
+  for (const t of raw) {
+    const cabin = CABIN_NORMALIZE[t.Cabin ?? ""];
+    if (!cabin) continue;
+    if (options?.cabin && cabin !== options.cabin) continue;
+    if (typeof t.MileageCost !== "number" || t.MileageCost <= 0) continue;
+
+    trips.push({
+      cabin,
+      miles: t.MileageCost,
+      flights: t.FlightNumbers ?? "",
+      connections: t.Connections ?? [],
+      stops: t.Stops ?? 0,
+      departsAt: t.DepartsAt ?? "",
+      arrivesAt: t.ArrivesAt ?? "",
+      totalDuration: t.TotalDuration ?? 0,
+      aircraft: t.Aircraft ?? [],
+      seats: t.RemainingSeats ?? 0
+    });
+  }
+
+  trips.sort((a, b) => a.miles - b.miles || a.totalDuration - b.totalDuration);
+  return trips;
 }

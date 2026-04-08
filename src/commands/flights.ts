@@ -1,5 +1,5 @@
 import { parseFlightsArgs } from "../core/args";
-import { searchFlights } from "../core/api";
+import { fetchTrips, searchFlights } from "../core/api";
 import { readConfig } from "../core/config";
 import { CliError } from "../core/errors";
 import { normalizeRows } from "../core/normalize";
@@ -127,6 +127,18 @@ export async function runFlights(argv: string[]): Promise<void> {
       warnings.push(
         `Seat count may be unreliable for: ${[...sourcesWithUnreliableCount].sort().join(", ")}. These results are shown without enforcing --min-seats.`
       );
+    }
+  }
+
+  if (args.trips) {
+    const seen = new Set<string>();
+    for (const row of rows) {
+      if (seen.has(row.availabilityId)) continue;
+      seen.add(row.availabilityId);
+      const trips = await fetchTrips(config.apiKey, row.availabilityId, { cabin: row.cabin });
+      if (trips.length > 0) {
+        row.trips = trips;
+      }
     }
   }
 

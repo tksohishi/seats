@@ -18,6 +18,7 @@ describe("parseFlightsArgs", () => {
       minSeats: undefined,
       direct: false,
       includeFiltered: false,
+      trips: false,
       debug: false,
       json: false,
       argWarnings: []

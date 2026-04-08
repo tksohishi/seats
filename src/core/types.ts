@@ -13,6 +13,7 @@ export type FlightsArgs = {
   minSeats?: number;
   direct: boolean;
   includeFiltered: boolean;
+  trips: boolean;
   debug: boolean;
   json: boolean;
   argWarnings: string[];
@@ -59,6 +60,19 @@ export type SearchResponse = {
   cursor?: number;
 };
 
+export type Trip = {
+  cabin: Cabin;
+  miles: number;
+  flights: string;
+  connections: string[];
+  stops: number;
+  departsAt: string;
+  arrivesAt: string;
+  totalDuration: number;
+  aircraft: string[];
+  seats: number;
+};
+
 export type FlightRow = {
   date: string;
   source: string;
@@ -72,6 +86,7 @@ export type FlightRow = {
   updatedAt: string | null;
   searchUrl: string;
   availabilityId: string;
+  trips?: Trip[];
 };
 
 export type SearchStats = {
