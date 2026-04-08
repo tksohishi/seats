@@ -15,7 +15,7 @@ Usage:
 }
 
 async function main(): Promise<void> {
-  const [, , command, ...rest] = Bun.argv;
+  const [, , command, ...rest] = process.argv;
 
   if (!command || command === "--help" || command === "-h") {
     printHelp();
