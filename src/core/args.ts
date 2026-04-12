@@ -21,6 +21,20 @@ const FLAG_VALUE_KEYS = new Set([
 ]);
 const BOOLEAN_FLAGS = new Set(["--direct", "--include-filtered", "--trips", "--json", "--debug"]);
 const VALID_CABINS = new Set<Cabin>(["economy", "premium", "business", "first"]);
+const CABIN_ALIASES: Record<string, Cabin> = {
+  economy: "economy",
+  coach: "economy",
+  y: "economy",
+  premium: "premium",
+  premiumeconomy: "premium",
+  w: "premium",
+  business: "business",
+  biz: "business",
+  j: "business",
+  c: "business",
+  first: "first",
+  f: "first"
+};
 const KNOWN_PROGRAMS = new Set(
   Object.values(ALLIANCE_SOURCES).flatMap((list) => list)
 );
@@ -177,11 +191,13 @@ export function parseFlightsArgs(argv: string[]): FlightsArgs {
   const cabinRaw = map.get("--cabin");
   let cabin: Cabin | undefined;
   if (cabinRaw) {
-    const value = String(cabinRaw).toLowerCase() as Cabin;
-    if (!VALID_CABINS.has(value)) {
+    const raw = String(cabinRaw);
+    const token = normalizeToken(raw);
+    const mapped = CABIN_ALIASES[token] ?? (VALID_CABINS.has(raw.toLowerCase() as Cabin) ? (raw.toLowerCase() as Cabin) : undefined);
+    if (!mapped) {
       throw new CliError(`Invalid --cabin value: ${cabinRaw}.`, 2);
     }
-    cabin = value;
+    cabin = mapped;
   }
 
   const minSeatsRaw = map.get("--min-seats");
