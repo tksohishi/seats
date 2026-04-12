@@ -76,7 +76,39 @@ export function resolveRequestedPrograms(args: FlightsArgs): {
   };
 }
 
+function printFlightsHelp(): void {
+  console.log(`seats flights: search award flight availability
+
+Usage:
+  seats flights --from JFK --to HND --date 2026-03-16 [options]
+
+Required:
+  --from CODE            3-letter IATA origin (e.g. JFK)
+  --to CODE              3-letter IATA destination (e.g. HND)
+  --date YYYY-MM-DD      Departure date (or range start with --date-end)
+
+Options:
+  --date-end YYYY-MM-DD  End of date range (inclusive)
+  --cabin CABIN          economy | premium | business | first
+  --program p1,p2        Scope to specific programs (e.g. aeroplan,united)
+  --alliance NAME        star | oneworld | skyteam
+  --transfer-partner P   amex,chase,citi,capitalone,bilt
+  --airline a,b          Filter by operating carrier (IATA codes or aliases)
+  --min-seats N          Require at least N seats available
+  --direct               Direct flights only
+  --include-filtered     Include results the API would normally filter
+  --trips                Fetch trip segment details
+  --debug                Print fetch/normalize summary to stderr
+  --json                 Emit JSON instead of a table
+  -h, --help             Show this help
+`);
+}
+
 export async function runFlights(argv: string[]): Promise<void> {
+  if (argv.length === 0 || argv.includes("--help") || argv.includes("-h")) {
+    printFlightsHelp();
+    return;
+  }
   const args = parseFlightsArgs(argv);
   const config = await readConfig();
   if (!config?.apiKey) {
