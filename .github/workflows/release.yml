@@ -35,6 +35,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun build --compile --minify --target=${{ matrix.target }} --outfile ${{ matrix.artifact }} src/cli.ts
+      - name: Ad-hoc sign darwin binary
+        if: startsWith(matrix.target, 'bun-darwin-')
+        run: codesign --sign - --force ${{ matrix.artifact }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
