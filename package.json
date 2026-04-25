@@ -1,6 +1,6 @@
 {
   "name": "seats",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "CLI for seats.aero partner API",
   "author": "Takeshi Ohishi",
   "license": "MIT",
