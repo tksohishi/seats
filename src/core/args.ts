@@ -17,7 +17,8 @@ const FLAG_VALUE_KEYS = new Set([
   "--alliance",
   "--transfer-partner",
   "--airline",
-  "--min-seats"
+  "--min-seats",
+  "--max-duration"
 ]);
 const BOOLEAN_FLAGS = new Set(["--direct", "--include-filtered", "--trips", "--json", "--debug"]);
 const VALID_CABINS = new Set<Cabin>(["economy", "premium", "business", "first"]);
@@ -210,6 +211,16 @@ export function parseFlightsArgs(argv: string[]): FlightsArgs {
     minSeats = parsed;
   }
 
+  const maxDurationRaw = map.get("--max-duration");
+  let maxDuration: number | undefined;
+  if (maxDurationRaw !== undefined) {
+    const parsed = Number.parseInt(String(maxDurationRaw), 10);
+    if (!Number.isFinite(parsed) || parsed < 1 || String(parsed) !== String(maxDurationRaw)) {
+      throw new CliError("Invalid --max-duration value. Expected integer >= 1.", 2);
+    }
+    maxDuration = parsed;
+  }
+
   let programs: string[] | undefined;
   const programRaw = map.get("--program");
   if (programRaw) {
@@ -259,6 +270,7 @@ export function parseFlightsArgs(argv: string[]): FlightsArgs {
     transferPartners,
     airlines,
     minSeats,
+    maxDuration,
     direct: map.get("--direct") === true,
     includeFiltered: map.get("--include-filtered") === true,
     trips: map.get("--trips") === true,

@@ -11,6 +11,7 @@ export type FlightsArgs = {
   transferPartners?: TransferPartner[];
   airlines?: string[];
   minSeats?: number;
+  maxDuration?: number;
   direct: boolean;
   includeFiltered: boolean;
   trips: boolean;
@@ -20,6 +21,33 @@ export type FlightsArgs = {
 };
 
 export type CabinCode = "Y" | "W" | "J" | "F";
+
+export type RawAvailabilitySegment = {
+  FlightNumber?: string;
+  Distance?: number;
+  OriginAirport?: string;
+  DestinationAirport?: string;
+  DepartsAt?: string;
+  ArrivesAt?: string;
+  Duration?: number;
+  AircraftName?: string;
+  AircraftCode?: string;
+};
+
+export type RawAvailabilityTrip = {
+  Cabin?: string;
+  MileageCost?: number;
+  FlightNumbers?: string;
+  Connections?: string[] | null;
+  Stops?: number;
+  DepartsAt?: string;
+  ArrivesAt?: string;
+  TotalDuration?: number;
+  Aircraft?: string[] | null;
+  RemainingSeats?: number;
+  Filtered?: boolean;
+  AvailabilitySegments?: RawAvailabilitySegment[];
+};
 
 export type AvailabilityRecord = {
   ID?: string;
@@ -51,6 +79,7 @@ export type AvailabilityRecord = {
   WDirect?: boolean | null;
   JDirect?: boolean | null;
   FDirect?: boolean | null;
+  AvailabilityTrips?: RawAvailabilityTrip[] | null;
 };
 
 export type SearchResponse = {
@@ -83,6 +112,7 @@ export type FlightRow = {
   seats_available: number | null;
   direct: boolean | null;
   airlines: string[];
+  total_duration_minutes: number | null;
   updatedAt: string | null;
   searchUrl: string;
   availabilityId: string;

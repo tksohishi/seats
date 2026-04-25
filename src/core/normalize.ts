@@ -1,5 +1,5 @@
 import { CODE_TO_CABIN } from "./types";
-import type { AvailabilityRecord, CabinCode, FlightRow, FlightsArgs } from "./types";
+import type { AvailabilityRecord, Cabin, CabinCode, FlightRow, FlightsArgs } from "./types";
 
 const CABIN_CODES: CabinCode[] = ["F", "J", "W", "Y"];
 const CABIN_RANK: Record<string, number> = {
@@ -84,6 +84,30 @@ function parseAirlines(value: string | null | undefined): string[] {
     .filter((airline) => airline.length > 0);
 }
 
+function normalizeCabin(value: string | null | undefined): Cabin | null {
+  const token = value?.toLowerCase();
+  if (token === "economy" || token === "premium" || token === "business" || token === "first") {
+    return token;
+  }
+  return null;
+}
+
+function getTotalDuration(record: AvailabilityRecord, cabin: Cabin): number | null {
+  if (!Array.isArray(record.AvailabilityTrips)) {
+    return null;
+  }
+
+  const durations = record.AvailabilityTrips
+    .filter((trip) => normalizeCabin(trip.Cabin) === cabin)
+    .map((trip) => trip.TotalDuration)
+    .filter((duration): duration is number => typeof duration === "number" && duration > 0);
+
+  if (durations.length === 0) {
+    return null;
+  }
+  return Math.min(...durations);
+}
+
 function buildSearchUrl(from: string, to: string, date: string, cabin: string, direct: boolean): string {
   const url = new URL("https://seats.aero/search");
   url.searchParams.set("origins", from);
@@ -160,6 +184,7 @@ export function normalizeRows(records: AvailabilityRecord[], args: FlightsArgs):
         airlines: parseAirlines(
           getCabinMetric<string | null>(record, code, "Airlines", metricOpts)
         ),
+        total_duration_minutes: getTotalDuration(record, cabin),
         updatedAt: record.UpdatedAt ?? null,
         searchUrl: buildSearchUrl(origin, destination, date, cabin, direct === true),
         availabilityId

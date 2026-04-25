@@ -37,6 +37,7 @@ seats flights --from JFK --to HND --date 2026-03-16 --transfer-partner amex
 seats flights --from JFK --to HND --date 2026-03-16 --airline jl,nh
 seats flights --from JFK --to HND --date 2026-03-16 --direct
 seats flights --from JFK --to HND --date 2026-03-16 --min-seats 2
+seats flights --from JFK --to HND --date 2026-03-16 --max-duration 1440
 seats flights --from JFK --to HND --date 2026-03-16 --trips --json
 seats flights --from JFK --to HND --date 2026-03-16 --include-filtered
 seats flights --from JFK --to HND --date 2026-03-16 --debug
@@ -56,6 +57,7 @@ seats flights --from JFK --to HND --date 2026-03-16 --json
 | `--transfer-partner` | `amex`, `chase`, `citi`, `capitalone`, `bilt` |
 | `--airline` | IATA carrier codes or names (e.g. `jl,nh`) |
 | `--min-seats` | Minimum available seats |
+| `--max-duration` | Maximum itinerary duration in minutes |
 | `--direct` | Non-stop only |
 | `--trips` | Fetch flight segment details per row |
 | `--include-filtered` | Include filtered/dynamic availability |

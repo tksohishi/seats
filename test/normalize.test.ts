@@ -153,4 +153,42 @@ describe("normalizeRows", () => {
     expect(rows[0]?.seats_available).toBe(1);
     expect(rows[0]?.direct).toBe(true);
   });
+
+  test("normalizes shortest embedded trip duration for matching cabin", () => {
+    const rows = normalizeRows(
+      [
+        {
+          ID: "abc",
+          Date: "2026-03-16",
+          Source: "qatar",
+          Route: {
+            OriginAirport: "JFK",
+            DestinationAirport: "HND"
+          },
+          JAvailable: true,
+          JMileageCost: "70000",
+          JRemainingSeats: 2,
+          JAirlines: "QR",
+          JDirect: false,
+          AvailabilityTrips: [
+            { Cabin: "economy", TotalDuration: 900, MileageCost: 30000 },
+            { Cabin: "business", TotalDuration: 1760, MileageCost: 70000 },
+            { Cabin: "business", TotalDuration: 2200, MileageCost: 70000 }
+          ]
+        }
+      ],
+      {
+        from: "JFK",
+        to: "HND",
+        date: "2026-03-16",
+        dateEnd: "2026-03-16",
+        direct: false,
+        includeFiltered: false,
+        json: false
+      }
+    );
+
+    expect(rows.length).toBe(1);
+    expect(rows[0]?.total_duration_minutes).toBe(1760);
+  });
 });

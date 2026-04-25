@@ -16,6 +16,7 @@ describe("parseFlightsArgs", () => {
       transferPartners: undefined,
       airlines: undefined,
       minSeats: undefined,
+      maxDuration: undefined,
       direct: false,
       includeFiltered: false,
       trips: false,
@@ -37,6 +38,7 @@ describe("parseFlightsArgs", () => {
       "--transfer-partner=membership-rewards,chase",
       "--airline=jal,NH",
       "--min-seats=2",
+      "--max-duration=1440",
       "--direct",
       "--include-filtered",
       "--json"
@@ -50,6 +52,7 @@ describe("parseFlightsArgs", () => {
     expect(args.transferPartners).toEqual(["amex", "chase"]);
     expect(args.airlines).toEqual(["JL", "NH"]);
     expect(args.minSeats).toBe(2);
+    expect(args.maxDuration).toBe(1440);
     expect(args.dateEnd).toBe("2026-03-20");
     expect(args.debug).toBe(false);
     expect(args.argWarnings).toEqual(["Normalized airline 'jal' to 'JL'."]);
@@ -86,6 +89,21 @@ describe("parseFlightsArgs", () => {
         "--date",
         "2026-03-16",
         "--min-seats",
+        "0"
+      ])
+    ).toThrow(CliError);
+  });
+
+  test("throws on invalid max duration", () => {
+    expect(() =>
+      parseFlightsArgs([
+        "--from",
+        "JFK",
+        "--to",
+        "HND",
+        "--date",
+        "2026-03-16",
+        "--max-duration",
         "0"
       ])
     ).toThrow(CliError);

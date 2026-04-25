@@ -11,6 +11,7 @@ const COLUMNS: Column[] = [
   { key: "cabin", title: "cabin" },
   { key: "miles", title: "miles" },
   { key: "seats_available", title: "seats_available" },
+  { key: "duration_min", title: "duration_min" },
   { key: "routing", title: "routing" },
   { key: "airline", title: "airline" },
   { key: "link", title: "link" }
@@ -34,6 +35,7 @@ export function renderFlightTable(rows: FlightRow[]): string {
     cabin: row.cabin,
     miles: row.miles === null ? "-" : String(row.miles),
     seats_available: row.seats_available === null ? "-" : String(row.seats_available),
+    duration_min: row.total_duration_minutes === null ? "-" : String(row.total_duration_minutes),
     routing: row.direct === true ? "direct" : row.direct === false ? "connecting" : "-",
     airline: row.airlines.join(", "),
     link: row.searchUrl

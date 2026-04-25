@@ -35,6 +35,39 @@ describe("searchFlights", () => {
     expect(parsed.searchParams.has("sources")).toBe(false);
   });
 
+  test("sets trip include flags", async () => {
+    let calledUrl = "";
+    const fetchImpl: typeof fetch = async (url) => {
+      calledUrl = String(url);
+      return new Response(
+        JSON.stringify({
+          data: [],
+          hasMore: false
+        }),
+        { status: 200 }
+      );
+    };
+
+    await searchFlights(
+      "k",
+      {
+        from: "JFK",
+        to: "HND",
+        date: "2026-03-16",
+        dateEnd: "2026-03-16",
+        direct: false,
+        includeFiltered: false,
+        includeTrips: true,
+        minifyTrips: true
+      },
+      { fetchImpl, maxPages: 50 }
+    );
+
+    const parsed = new URL(calledUrl);
+    expect(parsed.searchParams.get("include_trips")).toBe("true");
+    expect(parsed.searchParams.get("minify_trips")).toBe("true");
+  });
+
   test("follows pagination", async () => {
     let call = 0;
     const fetchImpl: typeof fetch = async () => {

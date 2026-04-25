@@ -8,7 +8,7 @@ function printHelp(): void {
   console.log(`seats CLI
 
 Usage:
-  seats flights --from JFK --to HND --date 2026-03-16 [--date-end YYYY-MM-DD] [--cabin economy|premium|business|first] [--program p1,p2] [--alliance star|oneworld|skyteam] [--transfer-partner amex,chase] [--airline aa,jl] [--min-seats N] [--direct] [--include-filtered] [--trips] [--debug] [--json]
+  seats flights --from JFK --to HND --date 2026-03-16 [--date-end YYYY-MM-DD] [--cabin economy|premium|business|first] [--program p1,p2] [--alliance star|oneworld|skyteam] [--transfer-partner amex,chase] [--airline aa,jl] [--min-seats N] [--max-duration N] [--direct] [--include-filtered] [--trips] [--debug] [--json]
   seats setup
   seats hotels
 `);

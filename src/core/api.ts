@@ -1,5 +1,5 @@
 import { CliError } from "./errors";
-import type { AvailabilityRecord, Cabin, SearchResponse, SearchStats, Trip } from "./types";
+import type { AvailabilityRecord, Cabin, RawAvailabilityTrip, SearchResponse, SearchStats, Trip } from "./types";
 
 const BASE_URL = "https://seats.aero/partnerapi/search";
 
@@ -11,6 +11,8 @@ type SearchQuery = {
 
   direct: boolean;
   includeFiltered: boolean;
+  includeTrips?: boolean;
+  minifyTrips?: boolean;
   sources?: string[];
   carriers?: string[];
 };
@@ -45,6 +47,12 @@ function buildUrl(query: SearchQuery, cursor?: number): string {
   }
   if (query.includeFiltered) {
     url.searchParams.set("include_filtered", "true");
+  }
+  if (query.includeTrips) {
+    url.searchParams.set("include_trips", "true");
+  }
+  if (query.minifyTrips) {
+    url.searchParams.set("minify_trips", "true");
   }
   if (typeof cursor === "number") {
     url.searchParams.set("cursor", String(cursor));
@@ -133,20 +141,6 @@ export async function searchFlights(
   };
 }
 
-type RawTrip = {
-  Cabin?: string;
-  MileageCost?: number;
-  FlightNumbers?: string;
-  Connections?: string[];
-  Stops?: number;
-  DepartsAt?: string;
-  ArrivesAt?: string;
-  TotalDuration?: number;
-  Aircraft?: string[];
-  RemainingSeats?: number;
-  Filtered?: boolean;
-};
-
 const CABIN_NORMALIZE: Record<string, Cabin> = {
   economy: "economy",
   premium: "premium",
@@ -177,7 +171,7 @@ export async function fetchTrips(
     throw parseApiError(bodyText, response.status);
   }
 
-  let parsed: { data?: RawTrip[] };
+  let parsed: { data?: RawAvailabilityTrip[] };
   try {
     parsed = JSON.parse(bodyText);
   } catch {

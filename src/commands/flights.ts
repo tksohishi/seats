@@ -95,6 +95,7 @@ Options:
   --transfer-partner P   amex,chase,citi,capitalone,bilt
   --airline a,b          Filter by operating carrier (IATA codes or aliases)
   --min-seats N          Require at least N seats available
+  --max-duration N       Maximum itinerary duration in minutes
   --direct               Direct flights only
   --include-filtered     Include results the API would normally filter
   --trips                Fetch trip segment details
@@ -123,6 +124,8 @@ export async function runFlights(argv: string[]): Promise<void> {
     dateEnd: args.dateEnd,
     direct: args.direct,
     includeFiltered: args.includeFiltered,
+    includeTrips: typeof args.maxDuration === "number",
+    minifyTrips: typeof args.maxDuration === "number",
     sources: scope.apiSources,
     carriers: args.airlines
   });
@@ -131,6 +134,8 @@ export async function runFlights(argv: string[]): Promise<void> {
   const allRows = normalizeRows(search.records, args);
   let rows = allRows;
   const preFilterRowCount = allRows.length;
+  let rowsAfterMinSeats = rows.length;
+  let rowsAfterDuration = rows.length;
 
   if (typeof args.minSeats === "number") {
     const sourcesWithUnknownCount = new Set(
@@ -148,6 +153,8 @@ export async function runFlights(argv: string[]): Promise<void> {
       }
       return row.seats_available === null || row.seats_available >= args.minSeats!;
     });
+    rowsAfterMinSeats = rows.length;
+    rowsAfterDuration = rows.length;
 
     if (sourcesWithUnknownCount.size > 0) {
       warnings.push(
@@ -162,13 +169,42 @@ export async function runFlights(argv: string[]): Promise<void> {
     }
   }
 
+  if (typeof args.maxDuration === "number") {
+    const sourcesWithUnknownDuration = new Set(
+      rows.filter((row) => row.total_duration_minutes === null).map((row) => row.source)
+    );
+
+    rows = rows.filter(
+      (row) => row.total_duration_minutes !== null && row.total_duration_minutes <= args.maxDuration!
+    );
+    rowsAfterDuration = rows.length;
+
+    if (sourcesWithUnknownDuration.size > 0) {
+      warnings.push(
+        `Duration data is unavailable for: ${[...sourcesWithUnknownDuration].sort().join(", ")}. These rows were removed by --max-duration.`
+      );
+    }
+  }
+
   if (args.trips) {
-    const seen = new Set<string>();
+    const tripCache = new Map<string, Awaited<ReturnType<typeof fetchTrips>>>();
     for (const row of rows) {
-      if (seen.has(row.availabilityId)) continue;
-      seen.add(row.availabilityId);
-      const trips = await fetchTrips(config.apiKey, row.availabilityId, { cabin: row.cabin });
+      const cacheKey = `${row.availabilityId}:${row.cabin}`;
+      let trips = tripCache.get(cacheKey);
+      if (!trips) {
+        trips = await fetchTrips(config.apiKey, row.availabilityId, { cabin: row.cabin });
+        tripCache.set(cacheKey, trips);
+      }
+      if (typeof args.maxDuration === "number") {
+        trips = trips.filter((trip) => trip.totalDuration > 0 && trip.totalDuration <= args.maxDuration!);
+      }
       if (trips.length > 0) {
+        const tripDurations = trips
+          .map((trip) => trip.totalDuration)
+          .filter((duration) => duration > 0);
+        if (tripDurations.length > 0) {
+          row.total_duration_minutes = Math.min(...tripDurations);
+        }
         row.trips = trips;
       }
     }
@@ -188,6 +224,7 @@ export async function runFlights(argv: string[]): Promise<void> {
         direct: args.direct,
         includeFiltered: args.includeFiltered,
         minSeats: args.minSeats ?? null,
+        maxDuration: args.maxDuration ?? null,
         programs: args.programs ?? null,
         alliance: args.alliance ?? null,
         transferPartners: args.transferPartners ?? null,
@@ -201,7 +238,8 @@ export async function runFlights(argv: string[]): Promise<void> {
       },
       normalize: {
         rowsBeforeMinSeats: preFilterRowCount,
-        rowsAfterMinSeats: rows.length
+        rowsAfterMinSeats,
+        rowsAfterDuration
       },
       coverage: {
         requestedPrograms: scope.requestedPrograms.length,
@@ -224,6 +262,7 @@ export async function runFlights(argv: string[]): Promise<void> {
         transferPartners: args.transferPartners,
         airlines: args.airlines,
         minSeats: args.minSeats,
+        maxDuration: args.maxDuration,
         direct: args.direct,
         includeFiltered: args.includeFiltered,
         json: true
