@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { searchFlights } from "../src/core/api";
+import { fetchTrips, searchFlights } from "../src/core/api";
 
 describe("searchFlights", () => {
   test("sets carrier filter and omits sources when not provided", async () => {
@@ -140,5 +140,74 @@ describe("searchFlights", () => {
     expect(result.stats.fetchedPages).toBe(2);
     expect(result.stats.truncated).toBe(true);
     expect(result.warnings.length).toBe(1);
+  });
+});
+
+describe("fetchTrips", () => {
+  test("normalizes segment details", async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response(
+        JSON.stringify({
+          data: [
+            {
+              Cabin: "business",
+              MileageCost: 60000,
+              FlightNumbers: "AA117, AA27",
+              Connections: ["LAX"],
+              Stops: 1,
+              DepartsAt: "2026-03-16T10:00:00Z",
+              ArrivesAt: "2026-03-17T05:00:00Z",
+              TotalDuration: 1140,
+              Aircraft: ["Airbus A321", "Boeing 787-9"],
+              RemainingSeats: 2,
+              AvailabilitySegments: [
+                {
+                  FlightNumber: "AA117",
+                  OriginAirport: "JFK",
+                  DestinationAirport: "LAX",
+                  DepartsAt: "2026-03-16T10:00:00Z",
+                  ArrivesAt: "2026-03-16T13:00:00Z",
+                  Duration: 360,
+                  AircraftName: "Airbus A321"
+                },
+                {
+                  FlightNumber: "AA27",
+                  OriginAirport: "LAX",
+                  DestinationAirport: "HND",
+                  DepartsAt: "2026-03-16T15:00:00Z",
+                  ArrivesAt: "2026-03-17T05:00:00Z",
+                  Duration: 720,
+                  AircraftName: "Boeing 787-9"
+                }
+              ]
+            }
+          ]
+        }),
+        { status: 200 }
+      );
+
+    const trips = await fetchTrips("k", "abc", { cabin: "business", fetchImpl });
+
+    expect(trips).toHaveLength(1);
+    expect(trips[0]?.segments).toEqual([
+      {
+        flight: "AA117",
+        from: "JFK",
+        to: "LAX",
+        departsAt: "2026-03-16T10:00:00Z",
+        arrivesAt: "2026-03-16T13:00:00Z",
+        durationMinutes: 360,
+        aircraft: "Airbus A321"
+      },
+      {
+        flight: "AA27",
+        from: "LAX",
+        to: "HND",
+        departsAt: "2026-03-16T15:00:00Z",
+        arrivesAt: "2026-03-17T05:00:00Z",
+        durationMinutes: 720,
+        aircraft: "Boeing 787-9"
+      }
+    ]);
   });
 });

@@ -46,7 +46,7 @@ export type RawAvailabilityTrip = {
   Aircraft?: string[] | null;
   RemainingSeats?: number;
   Filtered?: boolean;
-  AvailabilitySegments?: RawAvailabilitySegment[];
+  AvailabilitySegments?: RawAvailabilitySegment[] | null;
 };
 
 export type AvailabilityRecord = {
@@ -100,6 +100,17 @@ export type Trip = {
   totalDuration: number;
   aircraft: string[];
   seats: number;
+  segments: TripSegment[];
+};
+
+export type TripSegment = {
+  flight: string;
+  from: string;
+  to: string;
+  departsAt: string;
+  arrivesAt: string;
+  durationMinutes: number;
+  aircraft: string;
 };
 
 export type FlightRow = {

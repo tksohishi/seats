@@ -1,5 +1,14 @@
 import { CliError } from "./errors";
-import type { AvailabilityRecord, Cabin, RawAvailabilityTrip, SearchResponse, SearchStats, Trip } from "./types";
+import type {
+  AvailabilityRecord,
+  Cabin,
+  RawAvailabilitySegment,
+  RawAvailabilityTrip,
+  SearchResponse,
+  SearchStats,
+  Trip,
+  TripSegment
+} from "./types";
 
 const BASE_URL = "https://seats.aero/partnerapi/search";
 
@@ -148,6 +157,18 @@ const CABIN_NORMALIZE: Record<string, Cabin> = {
   first: "first"
 };
 
+function normalizeSegment(segment: RawAvailabilitySegment): TripSegment {
+  return {
+    flight: segment.FlightNumber ?? "",
+    from: segment.OriginAirport ?? "",
+    to: segment.DestinationAirport ?? "",
+    departsAt: segment.DepartsAt ?? "",
+    arrivesAt: segment.ArrivesAt ?? "",
+    durationMinutes: segment.Duration ?? 0,
+    aircraft: segment.AircraftName ?? segment.AircraftCode ?? ""
+  };
+}
+
 export async function fetchTrips(
   apiKey: string,
   availabilityId: string,
@@ -197,7 +218,8 @@ export async function fetchTrips(
       arrivesAt: t.ArrivesAt ?? "",
       totalDuration: t.TotalDuration ?? 0,
       aircraft: t.Aircraft ?? [],
-      seats: t.RemainingSeats ?? 0
+      seats: t.RemainingSeats ?? 0,
+      segments: Array.isArray(t.AvailabilitySegments) ? t.AvailabilitySegments.map(normalizeSegment) : []
     });
   }
 
