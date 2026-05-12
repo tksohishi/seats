@@ -37,6 +37,7 @@ export type RawAvailabilitySegment = {
 export type RawAvailabilityTrip = {
   Cabin?: string;
   MileageCost?: number;
+  TotalTaxes?: number;
   FlightNumbers?: string;
   Connections?: string[] | null;
   Stops?: number;
@@ -67,6 +68,11 @@ export type AvailabilityRecord = {
   WMileageCost?: string | number | null;
   JMileageCost?: string | number | null;
   FMileageCost?: string | number | null;
+  YTotalTaxes?: number | null;
+  WTotalTaxes?: number | null;
+  JTotalTaxes?: number | null;
+  FTotalTaxes?: number | null;
+  TaxesCurrency?: string | null;
   YRemainingSeats?: number | null;
   WRemainingSeats?: number | null;
   JRemainingSeats?: number | null;
@@ -92,6 +98,8 @@ export type SearchResponse = {
 export type Trip = {
   cabin: Cabin;
   miles: number;
+  taxes: number | null;
+  taxesCurrency: string | null;
   flights: string;
   connections: string[];
   stops: number;
@@ -120,6 +128,8 @@ export type FlightRow = {
   destination: string;
   cabin: Cabin;
   miles: number | null;
+  taxes: number | null;
+  taxesCurrency: string | null;
   seats_available: number | null;
   direct: boolean | null;
   airlines: string[];

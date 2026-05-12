@@ -10,12 +10,21 @@ const COLUMNS: Column[] = [
   { key: "program", title: "program" },
   { key: "cabin", title: "cabin" },
   { key: "miles", title: "miles" },
+  { key: "fee", title: "fee" },
   { key: "seats_available", title: "seats_available" },
   { key: "duration_min", title: "duration_min" },
   { key: "routing", title: "routing" },
   { key: "airline", title: "airline" },
   { key: "link", title: "link" }
 ];
+
+function formatFee(taxes: number | null, currency: string | null): string {
+  if (taxes === null) {
+    return "-";
+  }
+  const amount = (taxes / 100).toFixed(2);
+  return currency ? `${amount} ${currency}` : amount;
+}
 
 function pad(value: string, width: number): string {
   if (value.length >= width) {
@@ -34,6 +43,7 @@ export function renderFlightTable(rows: FlightRow[]): string {
     program: row.source,
     cabin: row.cabin,
     miles: row.miles === null ? "-" : String(row.miles),
+    fee: formatFee(row.taxes, row.taxesCurrency),
     seats_available: row.seats_available === null ? "-" : String(row.seats_available),
     duration_min: row.total_duration_minutes === null ? "-" : String(row.total_duration_minutes),
     routing: row.direct === true ? "direct" : row.direct === false ? "connecting" : "-",

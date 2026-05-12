@@ -172,7 +172,7 @@ function normalizeSegment(segment: RawAvailabilitySegment): TripSegment {
 export async function fetchTrips(
   apiKey: string,
   availabilityId: string,
-  options?: { cabin?: Cabin; fetchImpl?: typeof fetch }
+  options?: { cabin?: Cabin; taxesCurrency?: string | null; fetchImpl?: typeof fetch }
 ): Promise<Trip[]> {
   const fetchImpl = options?.fetchImpl ?? fetch;
   const url = `https://seats.aero/partnerapi/trips/${availabilityId}?include_filtered=true`;
@@ -211,6 +211,8 @@ export async function fetchTrips(
     trips.push({
       cabin,
       miles: t.MileageCost,
+      taxes: typeof t.TotalTaxes === "number" ? t.TotalTaxes : null,
+      taxesCurrency: options?.taxesCurrency ?? null,
       flights: t.FlightNumbers ?? "",
       connections: t.Connections ?? [],
       stops: t.Stops ?? 0,

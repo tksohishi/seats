@@ -192,7 +192,10 @@ export async function runFlights(argv: string[]): Promise<void> {
       const cacheKey = `${row.availabilityId}:${row.cabin}`;
       let trips = tripCache.get(cacheKey);
       if (!trips) {
-        trips = await fetchTrips(config.apiKey, row.availabilityId, { cabin: row.cabin });
+        trips = await fetchTrips(config.apiKey, row.availabilityId, {
+          cabin: row.cabin,
+          taxesCurrency: row.taxesCurrency
+        });
         tripCache.set(cacheKey, trips);
       }
       if (typeof args.maxDuration === "number") {

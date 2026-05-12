@@ -144,6 +144,9 @@ export function normalizeRows(records: AvailabilityRecord[], args: FlightsArgs):
 
       const metricOpts = { useRaw: args.includeFiltered, directOnly: args.direct };
       const miles = parseMiles(getCabinMetric(record, code, "MileageCost", metricOpts));
+      const taxesRaw = getCabinMetric<number | null>(record, code, "TotalTaxes", metricOpts);
+      const taxes = typeof taxesRaw === "number" && Number.isFinite(taxesRaw) ? taxesRaw : null;
+      const taxesCurrency = (record.TaxesCurrency ?? null) || null;
 
       let direct: boolean | null;
       if (args.direct) {
@@ -178,6 +181,8 @@ export function normalizeRows(records: AvailabilityRecord[], args: FlightsArgs):
         destination,
         cabin,
         miles,
+        taxes,
+        taxesCurrency,
         seats_available:
           getCabinMetric<number | null>(record, code, "RemainingSeats", metricOpts) ?? null,
         direct,

@@ -15,14 +15,17 @@ describe("normalizeRows", () => {
           },
           JAvailable: true,
           JMileageCost: "60000",
+          JTotalTaxes: 15000,
           JRemainingSeats: 2,
           JAirlines: "AA, JL",
           JDirect: true,
           YAvailable: true,
           YMileageCost: "30000",
+          YTotalTaxes: 4500,
           YRemainingSeats: 5,
           YAirlines: "AA",
-          YDirect: false
+          YDirect: false,
+          TaxesCurrency: "USD"
         }
       ],
       {
@@ -39,6 +42,9 @@ describe("normalizeRows", () => {
     expect(rows.length).toBe(2);
     expect(rows.map((row) => row.cabin)).toEqual(["economy", "business"]);
     expect(rows.find((row) => row.cabin === "business")?.miles).toBe(60000);
+    expect(rows.find((row) => row.cabin === "business")?.taxes).toBe(15000);
+    expect(rows.find((row) => row.cabin === "business")?.taxesCurrency).toBe("USD");
+    expect(rows.find((row) => row.cabin === "economy")?.taxes).toBe(4500);
   });
 
   test("respects direct filter", () => {
@@ -88,12 +94,15 @@ describe("normalizeRows", () => {
           JAvailableRaw: true,
           JMileageCost: "60000",
           JMileageCostRaw: 75000,
+          JTotalTaxes: 10000,
+          JTotalTaxesRaw: 22000,
           JRemainingSeats: 0,
           JRemainingSeatsRaw: 2,
           JAirlines: "AA",
           JAirlinesRaw: "AA, JL",
           JDirect: false,
-          JDirectRaw: true
+          JDirectRaw: true,
+          TaxesCurrency: "USD"
         }
       ],
       {
@@ -109,6 +118,8 @@ describe("normalizeRows", () => {
 
     expect(rows.length).toBe(1);
     expect(rows[0]?.miles).toBe(75000);
+    expect(rows[0]?.taxes).toBe(22000);
+    expect(rows[0]?.taxesCurrency).toBe("USD");
     expect(rows[0]?.seats_available).toBe(2);
     expect(rows[0]?.airlines).toEqual(["AA", "JL"]);
     expect(rows[0]?.direct).toBe(true);

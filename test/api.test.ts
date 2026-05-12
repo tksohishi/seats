@@ -152,6 +152,7 @@ describe("fetchTrips", () => {
             {
               Cabin: "business",
               MileageCost: 60000,
+              TotalTaxes: 12345,
               FlightNumbers: "AA117, AA27",
               Connections: ["LAX"],
               Stops: 1,
@@ -186,9 +187,15 @@ describe("fetchTrips", () => {
         { status: 200 }
       );
 
-    const trips = await fetchTrips("k", "abc", { cabin: "business", fetchImpl });
+    const trips = await fetchTrips("k", "abc", {
+      cabin: "business",
+      taxesCurrency: "USD",
+      fetchImpl
+    });
 
     expect(trips).toHaveLength(1);
+    expect(trips[0]?.taxes).toBe(12345);
+    expect(trips[0]?.taxesCurrency).toBe("USD");
     expect(trips[0]?.segments).toEqual([
       {
         flight: "AA117",
