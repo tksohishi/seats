@@ -4,7 +4,7 @@ import { readConfig } from "../core/config";
 import { CliError } from "../core/errors";
 import { normalizeRows } from "../core/normalize";
 import { renderFlightTable } from "../core/table";
-import type { FlightsArgs } from "../core/types";
+import type { FlightRow, FlightsArgs, Trip } from "../core/types";
 import {
   ALLIANCE_SOURCES,
   KNOWN_SOURCES,
@@ -76,6 +76,57 @@ export function resolveRequestedPrograms(args: FlightsArgs): {
   };
 }
 
+export function getTripSearchOptions(args: FlightsArgs): {
+  includeTrips: boolean;
+  minifyTrips: boolean;
+} {
+  const hasMaxDuration = typeof args.maxDuration === "number";
+  return {
+    includeTrips: args.trips || hasMaxDuration,
+    minifyTrips: hasMaxDuration && !args.trips
+  };
+}
+
+export async function attachTrips(
+  rows: FlightRow[],
+  loadTrips: (availabilityId: string, taxesCurrency: string | null) => Promise<Trip[]>,
+  maxDuration?: number
+): Promise<void> {
+  const fallbackCache = new Map<string, Trip[]>();
+
+  for (const row of rows) {
+    let trips = row.trips;
+    if (!trips || trips.length === 0) {
+      let fallbackTrips = fallbackCache.get(row.availabilityId);
+      if (!fallbackTrips) {
+        fallbackTrips = await loadTrips(row.availabilityId, row.taxesCurrency);
+        fallbackCache.set(row.availabilityId, fallbackTrips);
+      }
+      trips = fallbackTrips.filter((trip) => trip.cabin === row.cabin);
+    }
+
+    const tripDurations = trips
+      .map((trip) => trip.totalDuration)
+      .filter((duration) => duration > 0);
+    if (tripDurations.length > 0) {
+      row.total_duration_minutes = Math.min(...tripDurations);
+    }
+
+    if (typeof maxDuration === "number") {
+      trips = trips.filter(
+        (trip) => trip.totalDuration > 0 && trip.totalDuration <= maxDuration
+      );
+    }
+
+    if (trips.length === 0) {
+      delete row.trips;
+      continue;
+    }
+
+    row.trips = trips;
+  }
+}
+
 function printFlightsHelp(): void {
   console.log(`seats flights: search award flight availability
 
@@ -83,8 +134,8 @@ Usage:
   seats flights --from JFK --to HND --date 2026-03-16 [options]
 
 Required:
-  --from CODE            3-letter IATA origin (e.g. JFK)
-  --to CODE              3-letter IATA destination (e.g. HND)
+  --from CODE[,CODE]      Origin airport or city-area codes (e.g. JFK,LGA,EWR)
+  --to CODE[,CODE]        Destination airport or city-area codes (e.g. HND,NRT)
   --date YYYY-MM-DD      Departure date (or range start with --date-end)
 
 Options:
@@ -98,7 +149,7 @@ Options:
   --max-duration N       Maximum itinerary duration in minutes
   --direct               Direct flights only
   --include-filtered     Include results the API would normally filter
-  --trips                Fetch trip segment details
+  --trips                Include itinerary details (segments may be empty)
   --debug                Print fetch/normalize summary to stderr
   --json                 Emit JSON instead of a table
   -h, --help             Show this help
@@ -117,6 +168,7 @@ export async function runFlights(argv: string[]): Promise<void> {
   }
 
   const scope = resolveRequestedPrograms(args);
+  const tripSearchOptions = getTripSearchOptions(args);
   const search = await searchFlights(config.apiKey, {
     from: args.from,
     to: args.to,
@@ -124,8 +176,8 @@ export async function runFlights(argv: string[]): Promise<void> {
     dateEnd: args.dateEnd,
     direct: args.direct,
     includeFiltered: args.includeFiltered,
-    includeTrips: typeof args.maxDuration === "number",
-    minifyTrips: typeof args.maxDuration === "number",
+    includeTrips: tripSearchOptions.includeTrips,
+    minifyTrips: tripSearchOptions.minifyTrips,
     sources: scope.apiSources,
     carriers: args.airlines
   });
@@ -169,6 +221,15 @@ export async function runFlights(argv: string[]): Promise<void> {
     }
   }
 
+  if (args.trips) {
+    await attachTrips(
+      rows,
+      (availabilityId, taxesCurrency) =>
+        fetchTrips(config.apiKey, availabilityId, { taxesCurrency }),
+      args.maxDuration
+    );
+  }
+
   if (typeof args.maxDuration === "number") {
     const sourcesWithUnknownDuration = new Set(
       rows.filter((row) => row.total_duration_minutes === null).map((row) => row.source)
@@ -183,33 +244,6 @@ export async function runFlights(argv: string[]): Promise<void> {
       warnings.push(
         `Duration data is unavailable for: ${[...sourcesWithUnknownDuration].sort().join(", ")}. These rows were removed by --max-duration.`
       );
-    }
-  }
-
-  if (args.trips) {
-    const tripCache = new Map<string, Awaited<ReturnType<typeof fetchTrips>>>();
-    for (const row of rows) {
-      const cacheKey = `${row.availabilityId}:${row.cabin}`;
-      let trips = tripCache.get(cacheKey);
-      if (!trips) {
-        trips = await fetchTrips(config.apiKey, row.availabilityId, {
-          cabin: row.cabin,
-          taxesCurrency: row.taxesCurrency
-        });
-        tripCache.set(cacheKey, trips);
-      }
-      if (typeof args.maxDuration === "number") {
-        trips = trips.filter((trip) => trip.totalDuration > 0 && trip.totalDuration <= args.maxDuration!);
-      }
-      if (trips.length > 0) {
-        const tripDurations = trips
-          .map((trip) => trip.totalDuration)
-          .filter((duration) => duration > 0);
-        if (tripDurations.length > 0) {
-          row.total_duration_minutes = Math.min(...tripDurations);
-        }
-        row.trips = trips;
-      }
     }
   }
 

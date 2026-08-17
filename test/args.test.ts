@@ -26,6 +26,44 @@ describe("parseFlightsArgs", () => {
     });
   });
 
+  test("parses airport and city-area code lists", () => {
+    const args = parseFlightsArgs([
+      "--from",
+      "nyc, jfk,NYC",
+      "--to",
+      "tyo, nrt",
+      "--date",
+      "2026-03-16"
+    ]);
+
+    expect(args.from).toBe("NYC,JFK");
+    expect(args.to).toBe("TYO,NRT");
+  });
+
+  test("rejects malformed airport code lists", () => {
+    expect(() =>
+      parseFlightsArgs([
+        "--from",
+        "JFK,,EWR",
+        "--to",
+        "TYO",
+        "--date",
+        "2026-03-16"
+      ])
+    ).toThrow(CliError);
+
+    expect(() =>
+      parseFlightsArgs([
+        "--from",
+        "JFK",
+        "--to",
+        "HND2",
+        "--date",
+        "2026-03-16"
+      ])
+    ).toThrow(CliError);
+  });
+
   test("parses optional flags", () => {
     const args = parseFlightsArgs([
       "--from=JFK",

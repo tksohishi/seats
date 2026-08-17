@@ -1,5 +1,15 @@
 import { CODE_TO_CABIN } from "./types";
-import type { AvailabilityRecord, Cabin, CabinCode, FlightRow, FlightsArgs } from "./types";
+import type {
+  AvailabilityRecord,
+  Cabin,
+  CabinCode,
+  FlightRow,
+  FlightsArgs,
+  RawAvailabilitySegment,
+  RawAvailabilityTrip,
+  Trip,
+  TripSegment
+} from "./types";
 
 const CABIN_CODES: CabinCode[] = ["F", "J", "W", "Y"];
 const CABIN_RANK: Record<string, number> = {
@@ -92,6 +102,56 @@ function normalizeCabin(value: string | null | undefined): Cabin | null {
   return null;
 }
 
+function normalizeSegment(segment: RawAvailabilitySegment): TripSegment {
+  return {
+    flight: segment.FlightNumber ?? "",
+    from: segment.OriginAirport ?? "",
+    to: segment.DestinationAirport ?? "",
+    departsAt: segment.DepartsAt ?? "",
+    arrivesAt: segment.ArrivesAt ?? "",
+    durationMinutes: segment.Duration ?? 0,
+    aircraft: segment.AircraftName ?? segment.AircraftCode ?? ""
+  };
+}
+
+export function normalizeTrips(
+  rawTrips: RawAvailabilityTrip[] | null | undefined,
+  options?: { cabin?: Cabin; taxesCurrency?: string | null }
+): Trip[] {
+  if (!Array.isArray(rawTrips)) {
+    return [];
+  }
+
+  const trips: Trip[] = [];
+  for (const rawTrip of rawTrips) {
+    const cabin = normalizeCabin(rawTrip.Cabin);
+    if (!cabin) continue;
+    if (options?.cabin && cabin !== options.cabin) continue;
+    if (typeof rawTrip.MileageCost !== "number" || rawTrip.MileageCost <= 0) continue;
+
+    trips.push({
+      cabin,
+      miles: rawTrip.MileageCost,
+      taxes: typeof rawTrip.TotalTaxes === "number" ? rawTrip.TotalTaxes : null,
+      taxesCurrency: options?.taxesCurrency ?? null,
+      flights: rawTrip.FlightNumbers ?? "",
+      connections: rawTrip.Connections ?? [],
+      stops: rawTrip.Stops ?? 0,
+      departsAt: rawTrip.DepartsAt ?? "",
+      arrivesAt: rawTrip.ArrivesAt ?? "",
+      totalDuration: rawTrip.TotalDuration ?? 0,
+      aircraft: rawTrip.Aircraft ?? [],
+      seats: rawTrip.RemainingSeats ?? 0,
+      segments: Array.isArray(rawTrip.AvailabilitySegments)
+        ? rawTrip.AvailabilitySegments.map(normalizeSegment)
+        : []
+    });
+  }
+
+  trips.sort((a, b) => a.miles - b.miles || a.totalDuration - b.totalDuration);
+  return trips;
+}
+
 function getTotalDuration(record: AvailabilityRecord, cabin: Cabin): number | null {
   if (!Array.isArray(record.AvailabilityTrips)) {
     return null;
@@ -174,7 +234,7 @@ export function normalizeRows(records: AvailabilityRecord[], args: FlightsArgs):
       }
       dedupe.add(dedupeKey);
 
-      rows.push({
+      const row: FlightRow = {
         date,
         source,
         origin,
@@ -193,7 +253,16 @@ export function normalizeRows(records: AvailabilityRecord[], args: FlightsArgs):
         updatedAt: record.UpdatedAt ?? null,
         searchUrl: buildSearchUrl(origin, destination, date, cabin, direct === true),
         availabilityId
-      });
+      };
+
+      if (args.trips) {
+        const trips = normalizeTrips(record.AvailabilityTrips, { cabin, taxesCurrency });
+        if (trips.length > 0) {
+          row.trips = trips;
+        }
+      }
+
+      rows.push(row);
     }
   }
 

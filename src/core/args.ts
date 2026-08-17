@@ -52,12 +52,26 @@ function parseDate(value: string): boolean {
   return normalized === value;
 }
 
-function parseIata(value: string): string {
-  const normalized = value.trim().toUpperCase();
-  if (!/^[A-Z]{3}$/.test(normalized)) {
-    throw new CliError(`Invalid airport code: ${value}. Expected 3-letter IATA code.`, 2);
+function parseAirportList(value: string): string {
+  const rawCodes = value.split(",");
+  const codes: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rawCode of rawCodes) {
+    const code = rawCode.trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) {
+      throw new CliError(
+        `Invalid airport code list: ${value}. Expected comma-separated 3-letter IATA codes.`,
+        2
+      );
+    }
+    if (!seen.has(code)) {
+      seen.add(code);
+      codes.push(code);
+    }
   }
-  return normalized;
+
+  return codes.join(",");
 }
 
 function parseCsv(value: string): string[] {
@@ -173,8 +187,8 @@ export function parseFlightsArgs(argv: string[]): FlightsArgs {
     throw new CliError("Missing required flags. Required: --from --to --date", 2);
   }
 
-  const from = parseIata(String(fromRaw));
-  const to = parseIata(String(toRaw));
+  const from = parseAirportList(String(fromRaw));
+  const to = parseAirportList(String(toRaw));
   const date = String(dateRaw);
   if (!parseDate(date)) {
     throw new CliError(`Invalid --date value: ${date}. Expected YYYY-MM-DD.`, 2);

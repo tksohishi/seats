@@ -18,8 +18,8 @@ describe("searchFlights", () => {
     await searchFlights(
       "k",
       {
-        from: "JFK",
-        to: "HND",
+        from: "JFK,LGA,EWR",
+        to: "HND,NRT",
         date: "2026-03-16",
         dateEnd: "2026-03-16",
         direct: false,
@@ -31,11 +31,13 @@ describe("searchFlights", () => {
 
     const parsed = new URL(calledUrl);
     expect(parsed.searchParams.get("carriers")).toBe("AA,JL");
+    expect(parsed.searchParams.get("origin_airport")).toBe("JFK,LGA,EWR");
+    expect(parsed.searchParams.get("destination_airport")).toBe("HND,NRT");
     expect(parsed.searchParams.get("include_filtered")).toBe("true");
     expect(parsed.searchParams.has("sources")).toBe(false);
   });
 
-  test("sets trip include flags", async () => {
+  test("includes full trip details without minifying", async () => {
     let calledUrl = "";
     const fetchImpl: typeof fetch = async (url) => {
       calledUrl = String(url);
@@ -57,10 +59,36 @@ describe("searchFlights", () => {
         dateEnd: "2026-03-16",
         direct: false,
         includeFiltered: false,
+        includeTrips: true
+      },
+      { fetchImpl, maxPages: 50 }
+    );
+
+    const parsed = new URL(calledUrl);
+    expect(parsed.searchParams.get("include_trips")).toBe("true");
+    expect(parsed.searchParams.has("minify_trips")).toBe(false);
+  });
+
+  test("minifies trip details when requested", async () => {
+    let calledUrl = "";
+    const fetchImpl: typeof fetch = async (url) => {
+      calledUrl = String(url);
+      return new Response(JSON.stringify({ data: [], hasMore: false }), { status: 200 });
+    };
+
+    await searchFlights(
+      "k",
+      {
+        from: "JFK",
+        to: "HND",
+        date: "2026-03-16",
+        dateEnd: "2026-03-16",
+        direct: false,
+        includeFiltered: false,
         includeTrips: true,
         minifyTrips: true
       },
-      { fetchImpl, maxPages: 50 }
+      { fetchImpl }
     );
 
     const parsed = new URL(calledUrl);

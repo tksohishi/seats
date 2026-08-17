@@ -202,4 +202,80 @@ describe("normalizeRows", () => {
     expect(rows.length).toBe(1);
     expect(rows[0]?.total_duration_minutes).toBe(1760);
   });
+
+  test("uses route airports and normalizes inline trips", () => {
+    const rows = normalizeRows(
+      [
+        {
+          ID: "abc",
+          Date: "2026-03-16",
+          Source: "american",
+          Route: {
+            OriginAirport: "EWR",
+            DestinationAirport: "NRT"
+          },
+          JAvailable: true,
+          JMileageCost: "60000",
+          JTotalTaxes: 12345,
+          JRemainingSeats: 2,
+          JAirlines: "AA",
+          JDirect: false,
+          TaxesCurrency: "USD",
+          AvailabilityTrips: [
+            {
+              Cabin: "economy",
+              MileageCost: 30000,
+              TotalDuration: 800
+            },
+            {
+              Cabin: "business",
+              MileageCost: 70000,
+              TotalTaxes: 12345,
+              FlightNumbers: "AA117, AA27",
+              Connections: ["LAX"],
+              Stops: 1,
+              DepartsAt: "2026-03-16T10:00:00Z",
+              ArrivesAt: "2026-03-17T05:00:00Z",
+              TotalDuration: 1140,
+              Aircraft: ["Airbus A321", "Boeing 787-9"],
+              RemainingSeats: 2
+            }
+          ]
+        }
+      ],
+      {
+        from: "NYC,JFK",
+        to: "TYO,NRT",
+        date: "2026-03-16",
+        dateEnd: "2026-03-16",
+        direct: false,
+        includeFiltered: false,
+        trips: true,
+        debug: false,
+        json: true,
+        argWarnings: []
+      }
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.origin).toBe("EWR");
+    expect(rows[0]?.destination).toBe("NRT");
+    expect(rows[0]?.trips).toEqual([
+      {
+        cabin: "business",
+        miles: 70000,
+        taxes: 12345,
+        taxesCurrency: "USD",
+        flights: "AA117, AA27",
+        connections: ["LAX"],
+        stops: 1,
+        departsAt: "2026-03-16T10:00:00Z",
+        arrivesAt: "2026-03-17T05:00:00Z",
+        totalDuration: 1140,
+        aircraft: ["Airbus A321", "Boeing 787-9"],
+        seats: 2,
+        segments: []
+      }
+    ]);
+  });
 });

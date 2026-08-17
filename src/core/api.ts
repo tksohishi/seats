@@ -1,13 +1,12 @@
 import { CliError } from "./errors";
+import { normalizeTrips } from "./normalize";
 import type {
   AvailabilityRecord,
   Cabin,
-  RawAvailabilitySegment,
   RawAvailabilityTrip,
   SearchResponse,
   SearchStats,
-  Trip,
-  TripSegment
+  Trip
 } from "./types";
 
 const BASE_URL = "https://seats.aero/partnerapi/search";
@@ -150,25 +149,6 @@ export async function searchFlights(
   };
 }
 
-const CABIN_NORMALIZE: Record<string, Cabin> = {
-  economy: "economy",
-  premium: "premium",
-  business: "business",
-  first: "first"
-};
-
-function normalizeSegment(segment: RawAvailabilitySegment): TripSegment {
-  return {
-    flight: segment.FlightNumber ?? "",
-    from: segment.OriginAirport ?? "",
-    to: segment.DestinationAirport ?? "",
-    departsAt: segment.DepartsAt ?? "",
-    arrivesAt: segment.ArrivesAt ?? "",
-    durationMinutes: segment.Duration ?? 0,
-    aircraft: segment.AircraftName ?? segment.AircraftCode ?? ""
-  };
-}
-
 export async function fetchTrips(
   apiKey: string,
   availabilityId: string,
@@ -199,32 +179,8 @@ export async function fetchTrips(
     throw new CliError("Trips API returned invalid JSON.", 3);
   }
 
-  const raw = Array.isArray(parsed.data) ? parsed.data : [];
-  const trips: Trip[] = [];
-
-  for (const t of raw) {
-    const cabin = CABIN_NORMALIZE[t.Cabin ?? ""];
-    if (!cabin) continue;
-    if (options?.cabin && cabin !== options.cabin) continue;
-    if (typeof t.MileageCost !== "number" || t.MileageCost <= 0) continue;
-
-    trips.push({
-      cabin,
-      miles: t.MileageCost,
-      taxes: typeof t.TotalTaxes === "number" ? t.TotalTaxes : null,
-      taxesCurrency: options?.taxesCurrency ?? null,
-      flights: t.FlightNumbers ?? "",
-      connections: t.Connections ?? [],
-      stops: t.Stops ?? 0,
-      departsAt: t.DepartsAt ?? "",
-      arrivesAt: t.ArrivesAt ?? "",
-      totalDuration: t.TotalDuration ?? 0,
-      aircraft: t.Aircraft ?? [],
-      seats: t.RemainingSeats ?? 0,
-      segments: Array.isArray(t.AvailabilitySegments) ? t.AvailabilitySegments.map(normalizeSegment) : []
-    });
-  }
-
-  trips.sort((a, b) => a.miles - b.miles || a.totalDuration - b.totalDuration);
-  return trips;
+  return normalizeTrips(parsed.data, {
+    cabin: options?.cabin,
+    taxesCurrency: options?.taxesCurrency
+  });
 }

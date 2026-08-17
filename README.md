@@ -28,6 +28,8 @@ export SEATS_AERO_API_KEY=your_api_key
 ## Usage
 
 ```bash
+seats flights --from NYC --to TYO --date 2026-03-16
+seats flights --from JFK,LGA,EWR --to HND,NRT --date 2026-03-16
 seats flights --from JFK --to HND --date 2026-03-16
 seats flights --from JFK --to HND --date 2026-03-16 --cabin business
 seats flights --from JFK --to HND --date 2026-03-16 --date-end 2026-03-20
@@ -48,7 +50,7 @@ seats flights --from JFK --to HND --date 2026-03-16 --json
 
 | Flag | Description |
 |------|-------------|
-| `--from`, `--to` | IATA airport codes (required) |
+| `--from`, `--to` | Airport or city-area codes, comma-separated (required) |
 | `--date` | Search date, YYYY-MM-DD (required) |
 | `--date-end` | End of date range |
 | `--cabin` | `economy`, `premium`, `business`, `first` |
@@ -59,12 +61,14 @@ seats flights --from JFK --to HND --date 2026-03-16 --json
 | `--min-seats` | Minimum available seats |
 | `--max-duration` | Maximum itinerary duration in minutes |
 | `--direct` | Non-stop only |
-| `--trips` | Fetch flight segment details per row |
+| `--trips` | Include itinerary details; individual segments may be empty |
 | `--include-filtered` | Include filtered/dynamic availability |
 | `--json` | JSON output |
 | `--debug` | Debug info to stderr |
 
 Scope filters are optional. When omitted, the CLI searches across all programs.
+
+`--trips` uses itinerary details included with the search. It makes an additional request only when a result has no usable trip for the requested cabin. Inline trips include flight numbers, connections, times, duration, aircraft, seats, mileage, and taxes, but may omit the individual flight segments.
 
 ## Development
 
